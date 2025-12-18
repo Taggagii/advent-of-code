@@ -129,13 +129,15 @@ const populateNumberOfUniquePaths = (graph) => {
 const printGraph = (graph, source) => {
 	console.log(Object.keys(graph))
 
+	// find dimension
 	const dimension = Object.keys(graph).reduce((max, node) => {
 		const nodeNumbers = node.split(',').map((n) => parseInt(n));
 		return Math.max(...nodeNumbers, max);
-	}, 0) + 2;
+	}, 0) + 1;
 
+	// build placeholder board
 	const board = [];
-	for (let i = 0; i < dimension; ++i) {
+	for (let i = 0; i < dimension + 1; ++i) {
 		const temp = [];
 		for (let ii = 0; ii < dimension; ++ii) {
 			temp.push('.')
@@ -144,10 +146,25 @@ const printGraph = (graph, source) => {
 	}
 
 
+	// populate board
+
+	const dropDownPrint = (x, y) => {
+		for (let iterY = y; iterY < rows.length; ++iterY) {
+			if (iterY > dimension || graph[[x, iterY]]) {
+				break;
+			}
+			if (graph[[x, iterY]]) {
+				break;
+			}
+			board[iterY][x] = '|';
+		}
+	}
+
 	board[source[1]][source[0]] = 'S';
 
+	dropDownPrint(source[0], source[1] + 1);
 	Object.keys(graph).forEach((node) => {
-		const [x, y] = node.split(',').map((n) => parseInt(n));
+		let [x, y] = node.split(',').map((n) => parseInt(n));
 
 		if (x === source[0] && y === source[1]) {
 			return;
@@ -155,27 +172,13 @@ const printGraph = (graph, source) => {
 
 		board[y][x] = '^';
 
-		for (let iterY = y; iterY < rows.length; ++iterY) {
-			board[iterY][x + 1] = '|';
-
-			if (graph[[x + 1 iterY]]) {
-				return;
-			}
-		}
-
-		for (let iterY = y; iterY < rows.length; ++iterY) {
-			board[iterY][x - 1] = '|';
-
-			if (graph[[x - 1, iterY]]) {
-				return;
-			}
-		}
-
+		dropDownPrint(x + 1, y);
+		dropDownPrint(x - 1, y);
 	});
 
 
 
-	console.log(board.map((row) => row.join('')).join('\n'))
+	console.log(board.map((row) => row.join(' ')).join('\n'))
 
 
 }
