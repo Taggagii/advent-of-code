@@ -139,7 +139,7 @@ const printGraph = (graph, source) => {
 	for (let i = 0; i < dimension + 1; ++i) {
 		const temp = [];
 		for (let ii = 0; ii < dimension; ++ii) {
-			temp.push('.')
+			temp.push(' ')
 		}
 		board.push(temp)
 	}
@@ -178,10 +178,10 @@ const printGraph = (graph, source) => {
 				for (let iy = y; iy < childNode[1]; ++iy) {
 					board[iy][childNode[0]] = '¦';
 				}
-
 			}
 		});
 	});
+
 	//
 	// const nodeToExpand = Object.keys(graph)[19];
 	// let [x, y] = nodeToExpand.split(',').map((n) => parseInt(n));
@@ -209,11 +209,11 @@ const input = fs.readFileSync(`${__dirname}/realTree.txt`, 'utf8');
 // console.log(input)
 
 // parse into a graph
+const start = performance.now()
 const rows = input.split('\n').map((row) => row.split(''))
 
-
 const { source, graph } = buildGraph(rows);
-console.log('graph build')
+// console.log('graph build')
 
 printGraph(graph, source, rows)
 
@@ -227,7 +227,6 @@ addParentsToGraph(graph);
 
 // console.log(graph)
 
-//
 populateNumberOfUniquePaths(graph);
 
 // console.log('after unique counting')
@@ -235,7 +234,9 @@ populateNumberOfUniquePaths(graph);
 // 	console.log(node, graph[node].uniquePaths, Boolean(graph[node].left), Boolean(graph[node].right))
 // })
 //
-console.log(graph[source].uniquePaths - 1);
+const end = performance.now()
+console.log(`Timelines: ${graph[source].uniquePaths - 1}`);
+console.log(`Took: ${end - start}ms`)
 
 
 
