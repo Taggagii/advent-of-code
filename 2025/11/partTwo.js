@@ -633,15 +633,6 @@ const graphNodeTemplate = (childrenValues, parentValues) => ({
 	related: {},
 });
 
-const graph = input.split('\n').reduce((graph, node) => {
-		const [name, childrenString] = node.split(':');
-		const children = childrenString.trim().split(' ');
-
-		return {
-				...graph,
-				[name]: graphNodeTemplate(children, []),
-		};
-}, {});
 
 const addParents = (graph) => {
 	Object.keys(graph).forEach((parentName) => {
@@ -741,6 +732,16 @@ const populateUniquePathsFrom = (graph, from, reverse) => {
 	}
 }
 
+const start = performance.now()
+const graph = input.split('\n').reduce((graph, node) => {
+		const [name, childrenString] = node.split(':');
+		const children = childrenString.trim().split(' ');
+
+		return {
+				...graph,
+				[name]: graphNodeTemplate(children, []),
+		};
+}, {});
 
 addParents(graph);
 // console.log('starting graph')
@@ -767,7 +768,9 @@ filterNotRelated(graph, 'dac')
 
 populateUniquePathsFrom(graph, 'out', true);
 // console.log(graph)
+const end = performance.now()
 
 console.log(graph['svr'].uniquePaths)
+console.log(end - start)
 
 

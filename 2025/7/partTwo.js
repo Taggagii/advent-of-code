@@ -26,13 +26,18 @@ const buildGraph = (rows) => {
 	addNode(graph, sx, sy, undefined, undefined)
 
 	const sourceSplitY = findYThatSplits(sx, sy, rows);
-	addNode(graph, sx, sourceSplitY, undefined, undefined);
 	graph[[sx, sy]].left = [sx, sourceSplitY];
 
 	const splitsToHandle = [[sx, sourceSplitY]];
 
 	while (splitsToHandle.length) {
-		const [splitX, splitY] = splitsToHandle.pop();
+		const [splitX, splitY] = splitsToHandle.shift();
+
+		if (graphAlreadyContains(graph, splitX, splitY)) {
+			continue;
+		}
+
+		addNode(graph, splitX, splitY, undefined, undefined);
 
 		const leftX = splitX - 1
 		const leftY = findYThatSplits(leftX, splitY, rows);
@@ -42,16 +47,13 @@ const buildGraph = (rows) => {
 
 
 		if (leftY !== undefined) {
-			addNode(graph, leftX, leftY, undefined, undefined);
 			graph[[splitX, splitY]].left = [leftX, leftY];
 			splitsToHandle.push([leftX, leftY]);
 		}
 
 		if (rightY !== undefined) {
-			addNode(graph, rightX, rightY, undefined, undefined);
 			graph[[splitX, splitY]].right = [rightX, rightY];
 			splitsToHandle.push([rightX, rightY]);
-
 		}
 	}
 	return {
@@ -82,13 +84,12 @@ const numberOfSplits = (graph) => {
 
 const populateNumberOfUniquePaths = (graph) => {
 	const leaves = Object.keys(graph).filter((node) => {
-		graph[node].uniquePaths = 0;
 		graph[node].timesVisited = 0;
 		graph[node].requiredVisits = Boolean(graph[node].left) + Boolean(graph[node].right);
+		graph[node].uniquePaths = 2 - graph[node].requiredVisits;
 		graph[node].handled = false;
 
 		if (!(graph[node].left || graph[node].right)) {
-			graph[node].uniquePaths = 1;
 			return true
 		}
 
@@ -99,17 +100,17 @@ const populateNumberOfUniquePaths = (graph) => {
 	const stack = leaves;
 
 	while (stack.length) {
-		console.log(stack)
+		// console.log(stack)
 		const node = stack.shift();
-		console.log('handling', node)
+		// console.log('handling', node)
 
 		if (graph[node].timesVisited !== graph[node].requiredVisits) {
-			console.log(`can't handle yet`)
+			// console.log(`can't handle yet`)
 			continue;
 		}
 
 		if (graph[node].handled) {
-			console.log(`already handled`)
+			// console.log(`already handled`)
 			continue;
 		}
 
@@ -127,8 +128,6 @@ const populateNumberOfUniquePaths = (graph) => {
 }
 
 const printGraph = (graph, source) => {
-	console.log(Object.keys(graph))
-
 	// find dimension
 	const dimension = Object.keys(graph).reduce((max, node) => {
 		const nodeNumbers = node.split(',').map((n) => parseInt(n));
@@ -145,24 +144,23 @@ const printGraph = (graph, source) => {
 		board.push(temp)
 	}
 
-
 	// populate board
-
 	const dropDownPrint = (x, y) => {
-		for (let iterY = y; iterY < rows.length; ++iterY) {
+		for (let iterY = y; iterY < dimension; ++iterY) {
 			if (iterY > dimension || graph[[x, iterY]]) {
 				break;
 			}
 			if (graph[[x, iterY]]) {
 				break;
 			}
-			board[iterY][x] = '|';
+			board[iterY][x] = '¦';
 		}
 	}
 
 	board[source[1]][source[0]] = 'S';
 
 	dropDownPrint(source[0], source[1] + 1);
+
 	Object.keys(graph).forEach((node) => {
 		let [x, y] = node.split(',').map((n) => parseInt(n));
 
@@ -172,19 +170,42 @@ const printGraph = (graph, source) => {
 
 		board[y][x] = '^';
 
-		dropDownPrint(x + 1, y);
-		dropDownPrint(x - 1, y);
-	});
+		const graphNode = graph[[x, y]];
 
+		const childNodes = [graphNode.left, graphNode.right]
+		childNodes.forEach((childNode) => {
+			if (childNode) {
+				for (let iy = y; iy < childNode[1]; ++iy) {
+					board[iy][childNode[0]] = '¦';
+				}
+
+			}
+		});
+	});
+	//
+	// const nodeToExpand = Object.keys(graph)[19];
+	// let [x, y] = nodeToExpand.split(',').map((n) => parseInt(n));
+	//
+	// board[y][x] = '\x1b[33m^\x1b[0m'
+	//
+	// const graphNode = graph[[x, y]];
+	//
+	// const childNodes = [graphNode.left, graphNode.right]
+	// childNodes.forEach((childNode) => {
+	// 	if (childNode) {
+	// 		for (let iy = y; iy < childNode[1]; ++iy) {
+	// 			board[iy][childNode[0]] = '¦';
+	// 		}
+	//
+	// 	}
+	// });
 
 
 	console.log(board.map((row) => row.join(' ')).join('\n'))
-
-
 }
 
-const input = fs.readFileSync(`${__dirname}/othertree.txt`, 'utf8');
-// const input = fs.readFileSync(`${__dirname}/realTree.txt`, 'utf8');
+// const input = fs.readFileSync(`${__dirname}/othertree.txt`, 'utf8');
+const input = fs.readFileSync(`${__dirname}/realTree.txt`, 'utf8');
 // console.log(input)
 
 // parse into a graph
@@ -192,30 +213,29 @@ const rows = input.split('\n').map((row) => row.split(''))
 
 
 const { source, graph } = buildGraph(rows);
+console.log('graph build')
 
-printGraph(graph, source)
-
-console.log(graph)
+printGraph(graph, source, rows)
 
 // console.log(source);
 // Object.keys(graph).forEach((node) => console.log(node, graph[node]))
 // console.log("-----------")
-
-
-// addParentsToGraph(graph);
+//
+//
+addParentsToGraph(graph);
 // Object.keys(graph).forEach((node) => console.log(graph[node].parents));
 
 // console.log(graph)
 
 //
-// populateNumberOfUniquePaths(graph);
+populateNumberOfUniquePaths(graph);
 
 // console.log('after unique counting')
 // Object.keys(graph).forEach((node) => {
 // 	console.log(node, graph[node].uniquePaths, Boolean(graph[node].left), Boolean(graph[node].right))
 // })
-
-// console.log(graph[source]);
+//
+console.log(graph[source].uniquePaths - 1);
 
 
 
