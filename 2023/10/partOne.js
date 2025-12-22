@@ -1,4 +1,3 @@
-const { dir } = require('node:console');
 const fs = require('node:fs');
 
 const findS = (values) => {
@@ -69,14 +68,14 @@ const FBend = (direction) => {
 }
 
 const horizontalPipe = (direction) => {
-	if (direction.LEFT || direction.RIGHT) {
+	if ([Directions.LEFT, Directions.RIGHT].includes(direction)) {
 		return direction;
 	}
 	return false;
 }
 
 const verticalPipe = (direction) => {
-	if (direction.UP || direction.DOWN) {
+	if ([Directions.UP, Directions.DOWN].includes(direction)) {
 		return direction;
 	}
 	return false;
@@ -98,39 +97,102 @@ const pipeDirectionMutator = (direction, pipe) => {
 			return horizontalPipe(direction);
 		} case "|": {
 			return verticalPipe(direction);
+		} default: { // if it's already visited it'll be a number
+			return false;
 		}
 	}
-
-	throw new Error("I'm sorry but I don't recognize that type of pipe");
 }
 
 const parseInput = (s, values) => {
-	console.log(s)
-	console.log(values);
 
 	const unitOffsets = [
-		[0, 1],
-		[0, -1]
-		[1, 0],
-		[-1, 0],
+		{
+			direction: Directions.DOWN,
+			offset: [0, 1]
+		},
+		{
+			direction: Directions.UP,
+			offset: [0, -1]
+		},
+		{
+			direction: Directions.RIGHT,
+			offset: [1, 0]
+		},
+		{
+			direction: Directions.LEFT,
+			offset: [-1, 0]
+		},
 	];
+
+	const directionOffsetMap = unitOffsets.reduce((prev, cur) => {
+		prev[cur.direction] = cur.offset;
+		return prev;
+	}, {});
 
 	const insideDimensions = (coordinate) => {
 		const [x, y] = coordinate;
 		const dimensionsX = values[0].length;
 		const dimensionsY = values.length;
 
-		return x >= 0 && y >= 0 && x < dimensionsX && y > dimensionsY
+		return x >= 0 && y >= 0 && x < dimensionsX && y < dimensionsY
 	}
 
-	const queue = unitOffsets
-		.map(([x, y]) => [s[0] + x, s[1] + y])
-		.filter((coord) => insideDimensions(coord));
+	const applyOffset = (coordinate, offset) => [coordinate[0] + offset[0], coordinate[1] + offset[1]];
+	 
+	values[s[1]][s[0]] = 0;
 
-	console.log(queue);
+	// console.log(s)
+	// console.log(values);
+
+	const queue = unitOffsets
+		.map((offset) => ({
+			coordinate: applyOffset(s, offset.offset),
+			direction: offset.direction,
+			distance: 1,
+		}))
+		.filter((coord) => insideDimensions(coord.coordinate));
+
+	let greatestDistance = 0;
+
+	while (queue.length) {
+		const path = queue.shift();
+		const [x, y] = path.coordinate;
+		const pipe = values[y][x];
+
+		const mutation = pipeDirectionMutator(path.direction, pipe);
+
+		const offset = directionOffsetMap[mutation];
+
+		// console.log();
+		// console.log('handing new path:', path);
+		// console.log('the pipe were handing:', pipe)
+		// console.log('The mutation output is:', mutation);
+		// console.log('new offset', offset);
+		//
+		if (!offset) {
+			// console.log('Interesting, we dont have an offset to apply')
+			continue;
+		}
+
+		const newCoordinate = applyOffset(path.coordinate, offset);
+		// console.log('The new coordinate is:', newCoordinate);
+
+		values[y][x] = path.distance;
+		greatestDistance = Math.max(greatestDistance, path.distance);
+
+		path.distance += 1;
+		path.coordinate = newCoordinate;
+		path.direction = mutation;
+
+		queue.push(path);
+	}
+
+	console.log(values.map((l) => l.join('')).join('\n'));
+	console.log(`The largest distance was ${greatestDistance}`);
 }
 
-const input = fs.readFileSync('sampleInput.txt', 'utf8');
+// const input = fs.readFileSync('sampleInput.txt', 'utf8');
+const input = fs.readFileSync('input.txt', 'utf8');
 
 const inputValues = input.trim().split('\n').map((line) => line.trim().split(''));
 
